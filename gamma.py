@@ -8,7 +8,8 @@ from datetime import datetime, timedelta, date
 pd.options.display.float_format = '{:,.4f}'.format
 
 # Inputs and Parameters
-filename = 'spx_quotedata.csv'
+# filename = 'cvna_quotedata.csv'
+filename = 'cvna_quotedata_July.csv'
 
 # Black-Scholes European-Options Gamma
 def calcGammaEx(S, K, vol, T, r, q, optType, OI):
@@ -36,8 +37,8 @@ optionsFile.close()
 # Get SPX Spot
 spotLine = optionsFileData[1]
 spotPrice = float(spotLine.split('Last:')[1].split(',')[0])
-fromStrike = 0.8 * spotPrice
-toStrike = 1.2 * spotPrice
+fromStrike = 0.5 * spotPrice
+toStrike = 1.5 * spotPrice
 
 # Get Today's Date
 dateLine = optionsFileData[2]
@@ -46,7 +47,7 @@ monthDay = todayDate[0].split(' ')
 
 # Handling of US/EU date formats
 if len(monthDay) == 2:
-    year = int(todayDate[1])
+    year = int(todayDate[1].split()[0])
     month = monthDay[0]
     day = int(monthDay[1])
 else:
@@ -73,107 +74,32 @@ df['PutGamma'] = df['PutGamma'].astype(float)
 df['CallOpenInt'] = df['CallOpenInt'].astype(float)
 df['PutOpenInt'] = df['PutOpenInt'].astype(float)
 
-
 # ---=== CALCULATE SPOT GAMMA ===---
 # Gamma Exposure = Unit Gamma * Open Interest * Contract Size * Spot Price 
 # To further convert into 'per 1% move' quantity, multiply by 1% of spotPrice
 df['CallGEX'] = df['CallGamma'] * df['CallOpenInt'] * 100 * spotPrice * spotPrice * 0.01
 df['PutGEX'] = df['PutGamma'] * df['PutOpenInt'] * 100 * spotPrice * spotPrice * 0.01 * -1
-
-df['TotalGamma'] = (df.CallGEX + df.PutGEX) / 10**9
-dfAgg = df.groupby(['StrikePrice']).sum()
+df['TotalGamma'] = (df.CallGEX + df.PutGEX) / 10 ** 6
+dfAgg = df.groupby(['StrikePrice'])[['CallGEX', 'PutGEX', 'TotalGamma']].sum()
 strikes = dfAgg.index.values
 
-# Chart 1: Absolute Gamma Exposure
-plt.grid()
-plt.bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=6, linewidth=0.1, edgecolor='k', label="Gamma Exposure")
+# Display Gamma Exposure
+fig = plt.figure()
+fig.set_facecolor('black')
+plt.rcParams['ytick.color'] = 'white'
+plt.rcParams['xtick.color'] = 'white'
+plt.rcParams['axes.edgecolor'] = 'white'
+plt.grid(True, linestyle='dashed', lw=0.3)
+colors = ['green' if value >= 0 else 'red' for value in dfAgg['TotalGamma'].to_numpy()]
+plt.bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Gamma Exposure", color=colors)
+plt.gca().set_facecolor('black')
+plt.rcParams['axes.edgecolor'] = 'white'
 plt.xlim([fromStrike, toStrike])
-chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum())) + " Bn per 1% SPX Move"
-plt.title(chartTitle, fontweight="bold", fontsize=20)
-plt.xlabel('Strike', fontweight="bold")
-plt.ylabel('Spot Gamma Exposure ($ billions/1% move)', fontweight="bold")
-plt.axvline(x=spotPrice, color='r', lw=1, label="SPX Spot: " + str("{:,.0f}".format(spotPrice)))
+chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum())) + " M per 1% CVNA Move"
+plt.title(chartTitle, fontweight="bold", fontsize=20, color='white')
+plt.xlabel('Strike', fontweight="bold", color='white')
+plt.ylabel('Spot Gamma Exposure ($M / 1% move)', fontweight="bold", color='white')
+plt.axhline(y=0, color='white', lw=0.5)
 plt.legend()
 plt.show()
 
-# Chart 2: Absolute Gamma Exposure by Calls and Puts
-plt.grid()
-plt.bar(strikes, dfAgg['CallGEX'].to_numpy() / 10**9, width=6, linewidth=0.1, edgecolor='k', label="Call Gamma")
-plt.bar(strikes, dfAgg['PutGEX'].to_numpy() / 10**9, width=6, linewidth=0.1, edgecolor='k', label="Put Gamma")
-plt.xlim([fromStrike, toStrike])
-chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum())) + " Bn per 1% SPX Move"
-plt.title(chartTitle, fontweight="bold", fontsize=20)
-plt.xlabel('Strike', fontweight="bold")
-plt.ylabel('Spot Gamma Exposure ($ billions/1% move)', fontweight="bold")
-plt.axvline(x=spotPrice, color='r', lw=1, label="SPX Spot:" + str("{:,.0f}".format(spotPrice)))
-plt.legend()
-plt.show()
-
-
-# ---=== CALCULATE GAMMA PROFILE ===---
-levels = np.linspace(fromStrike, toStrike, 60)
-
-# For 0DTE options, I'm setting DTE = 1 day, otherwise they get excluded
-df['daysTillExp'] = [1/262 if (np.busday_count(todayDate.date(), x.date())) == 0 \
-                           else np.busday_count(todayDate.date(), x.date())/262 for x in df.ExpirationDate]
-
-nextExpiry = df['ExpirationDate'].min()
-
-df['IsThirdFriday'] = [isThirdFriday(x) for x in df.ExpirationDate]
-thirdFridays = df.loc[df['IsThirdFriday'] == True]
-nextMonthlyExp = thirdFridays['ExpirationDate'].min()
-
-totalGamma = []
-totalGammaExNext = []
-totalGammaExFri = []
-
-# For each spot level, calc gamma exposure at that point
-for level in levels:
-    df['callGammaEx'] = df.apply(lambda row : calcGammaEx(level, row['StrikePrice'], row['CallIV'], 
-                                                          row['daysTillExp'], 0, 0, "call", row['CallOpenInt']), axis = 1)
-
-    df['putGammaEx'] = df.apply(lambda row : calcGammaEx(level, row['StrikePrice'], row['PutIV'], 
-                                                         row['daysTillExp'], 0, 0, "put", row['PutOpenInt']), axis = 1)    
-
-    totalGamma.append(df['callGammaEx'].sum() - df['putGammaEx'].sum())
-
-    exNxt = df.loc[df['ExpirationDate'] != nextExpiry]
-    totalGammaExNext.append(exNxt['callGammaEx'].sum() - exNxt['putGammaEx'].sum())
-
-    exFri = df.loc[df['ExpirationDate'] != nextMonthlyExp]
-    totalGammaExFri.append(exFri['callGammaEx'].sum() - exFri['putGammaEx'].sum())
-
-totalGamma = np.array(totalGamma) / 10**9
-totalGammaExNext = np.array(totalGammaExNext) / 10**9
-totalGammaExFri = np.array(totalGammaExFri) / 10**9
-
-# Find Gamma Flip Point
-zeroCrossIdx = np.where(np.diff(np.sign(totalGamma)))[0]
-
-negGamma = totalGamma[zeroCrossIdx]
-posGamma = totalGamma[zeroCrossIdx+1]
-negStrike = levels[zeroCrossIdx]
-posStrike = levels[zeroCrossIdx+1]
-
-zeroGamma = posStrike - ((posStrike - negStrike) * posGamma/(posGamma-negGamma))
-zeroGamma = zeroGamma[0]
-
-# Chart 3: Gamma Exposure Profile
-fig, ax = plt.subplots()
-plt.grid()
-plt.plot(levels, totalGamma, label="All Expiries")
-plt.plot(levels, totalGammaExNext, label="Ex-Next Expiry")
-plt.plot(levels, totalGammaExFri, label="Ex-Next Monthly Expiry")
-chartTitle = "Gamma Exposure Profile, SPX, " + todayDate.strftime('%d %b %Y')
-plt.title(chartTitle, fontweight="bold", fontsize=20)
-plt.xlabel('Index Price', fontweight="bold")
-plt.ylabel('Gamma Exposure ($ billions/1% move)', fontweight="bold")
-plt.axvline(x=spotPrice, color='r', lw=1, label="SPX Spot: " + str("{:,.0f}".format(spotPrice)))
-plt.axvline(x=zeroGamma, color='g', lw=1, label="Gamma Flip: " + str("{:,.0f}".format(zeroGamma)))
-plt.axhline(y=0, color='grey', lw=1)
-plt.xlim([fromStrike, toStrike])
-trans = ax.get_xaxis_transform()
-plt.fill_between([fromStrike, zeroGamma], min(totalGamma), max(totalGamma), facecolor='red', alpha=0.1, transform=trans)
-plt.fill_between([zeroGamma, toStrike], min(totalGamma), max(totalGamma), facecolor='green', alpha=0.1, transform=trans)
-plt.legend()
-plt.show()
