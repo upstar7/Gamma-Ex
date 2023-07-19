@@ -4,6 +4,68 @@ import scipy
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta, date
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+import undetected_chromedriver as uc
+import time
+import random
+
+def delay(s, e):
+	interval = random.uniform(s, e)
+	time.sleep(interval)
+
+def initialize_driver():
+    useragent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36"
+    chromeOptions = uc.ChromeOptions()
+    chromeOptions.add_argument(f'user-agent={useragent}')
+    chromeOptions.headless = True
+    chromeOptions.add_argument("--headless")
+
+    chromeOptions.add_argument("--disable-blink-features=AutomationControlled")
+    chromeOptions.add_argument("--no-first-run")
+    chromeOptions.add_argument("--no-service-autorun")
+    chromeOptions.add_argument("--no-default-browser-check")
+    chromeOptions.add_argument("--disable-extensions")
+    chromeOptions.add_argument("--disable-popup-blocking")
+    chromeOptions.add_argument("--profile-directory=Default")
+    chromeOptions.add_argument("--ignore-certificate-errors")
+    chromeOptions.add_argument("--disable-plugins-discovery")
+    chromeOptions.add_argument("--incognito")
+    chromeOptions.add_argument("--start-maximized")
+    chromeOptions.add_argument('--no-sandbox')
+    
+    global driver
+    driver = uc.Chrome(executable_path=ChromeDriverManager().install(), options=chromeOptions)
+
+initialize_driver()
+
+# Navigate to the webpage
+driver.get('https://www.cboe.com/delayed_quotes/cvna/quote_table')
+
+try:
+    delay(1, 3)
+    driver.find_element(By.CSS_SELECTOR, ".button--solid.privacy-alert__agree-button").click()
+    print("Click agree")
+except:
+    pass
+
+try:
+    delay(1, 3)
+    viewChainButton = driver.find_element(By.CSS_SELECTOR, '.Button__StyledButton-sc-1tdgwi0-2.gNcAGf')
+    viewChainButton.click()
+except:
+    pass
+
+try:
+    delay(1, 3)
+    downloadButton = driver.find_element(By.CSS_SELECTOR, '.Button__StyledButton-sc-1tdgwi0-2.kvidqt')
+    downloadButton.click()
+except:
+    pass
+
 
 pd.options.display.float_format = '{:,.4f}'.format
 
