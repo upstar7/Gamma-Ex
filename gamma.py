@@ -172,87 +172,24 @@ df['TotalGamma'] = (df.CallGEX + df.PutGEX)
 dfAgg = df.groupby(['StrikePrice'])[['CallGEX', 'PutGEX', 'TotalGamma']].sum()
 strikes = dfAgg.index.values
 
-# # Display Gamma Exposure
-# fig = plt.figure()
-# fig.set_facecolor('black')
-# colors = ['lightgreen' if value >= 0 else 'red' for value in dfAgg['TotalGamma'].to_numpy()]
-# chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum() / 10 ** 6)) + "M per 1% CVNA Move"
-# plt.rcParams['ytick.color'] = 'white'
-# plt.rcParams['xtick.color'] = 'white'
-# plt.rcParams['axes.edgecolor'] = 'white'
-# plt.rcParams['axes.edgecolor'] = 'white'
-# plt.grid(True, linestyle='dashed', lw=0.3)
-# plt.bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Gamma Exposure", color=colors)
-# plt.gca().set_facecolor('black')
-# plt.xlim([fromStrike, toStrike])
-# plt.title(chartTitle, fontweight="bold", fontsize=20, color='white')
-# plt.xlabel('Strike', fontweight="bold", color='white')
-# plt.ylabel('Spot Gamma Exposure ($ / 1% move)', fontweight="bold", color='white')
-# plt.axhline(y=0, color='white', lw=0.5)
-# plt.legend()
-
-# # Define custom formatter function
-# def yAxisFormatter(y, pos):
-#     if -1000000 >= y >= 1000000:
-#         return f"{y/1000000:.1f}M"
-#     else:
-#         return f"{y/1000:.0f}K"
-
-# # Apply formatter to the y-axis tick labels
-# plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
-
-# plt.show()
-
-
-# Create a figure with two subplots
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+# Display Gamma Exposure
+fig = plt.figure()
 fig.set_facecolor('black')
-chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum() / 10 ** 6)) + "M per 1% CVNA Move"
-
-# First subplot: Bar chart
-ax1.set_facecolor('black')
 colors = ['green' if value >= 0 else 'red' for value in dfAgg['TotalGamma'].to_numpy()]
-ax1.bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Gamma Exposure", color=colors)
-ax1.set_xlim([fromStrike, toStrike])
-ax1.set_title(chartTitle, fontweight="bold", fontsize=14, color='white')
-ax1.set_xlabel('Strike', fontweight="bold", color='white')
-ax1.set_ylabel('Gamma Exposure ($ / 1% move)', fontweight="bold", color='white')
-ax1.axhline(y=0, color='white', lw=0.5)
-ax1.legend()
-ax1.grid(True, linestyle='dashed', lw=0.3)
-
-# Set the color of axes and ticks to white for the first subplot
-ax1.spines['bottom'].set_color('white')
-ax1.spines['left'].set_color('white')
-ax1.spines['top'].set_color('white')
-ax1.spines['right'].set_color('white')
-ax1.xaxis.label.set_color('white')
-ax1.yaxis.label.set_color('white')
-ax1.tick_params(axis='x', colors='white')
-ax1.tick_params(axis='y', colors='white')
-
-# Second subplot: Line plot
-ax2.set_facecolor('black')
-
-ax2.plot(strikes, dfAgg['TotalGamma'].to_numpy(), linewidth=1, label="Gamma Exposure", color='green')
-ax2.fill_between(strikes, dfAgg['TotalGamma'].to_numpy(), color='lightgreen', alpha=0.3)
-ax2.set_xlim([fromStrike, toStrike])
-ax2.set_title(chartTitle, fontweight="bold", fontsize=14, color='white')
-ax2.set_xlabel('Strike', fontweight="bold", color='white')
-ax2.set_ylabel('Gamma Exposure ($ / 1% move)', fontweight="bold", color='white')
-ax2.axhline(y=0, color='white', lw=0.5)
-ax2.legend()
-ax2.grid(True, linestyle='dashed', lw=0.3)
-
-# Set the color of axes and ticks to white for the second subplot
-ax2.spines['bottom'].set_color('white')
-ax2.spines['left'].set_color('white')
-ax2.spines['top'].set_color('white')
-ax2.spines['right'].set_color('white')
-ax2.xaxis.label.set_color('white')
-ax2.yaxis.label.set_color('white')
-ax2.tick_params(axis='x', colors='white')
-ax2.tick_params(axis='y', colors='white')
+chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum() / 10 ** 6)) + "M per 1% CVNA Move"
+plt.rcParams['ytick.color'] = 'white'
+plt.rcParams['xtick.color'] = 'white'
+plt.rcParams['axes.edgecolor'] = 'white'
+plt.rcParams['axes.edgecolor'] = 'white'
+plt.grid(True, linestyle='dashed', lw=0.3)
+plt.bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Gamma Exposure", color=colors)
+plt.gca().set_facecolor('black')
+plt.xlim([fromStrike, toStrike])
+plt.title(chartTitle, fontweight="bold", fontsize=20, color='white')
+plt.xlabel('Strike', fontweight="bold", color='white')
+plt.ylabel('Spot Gamma Exposure ($ / 1% move)', fontweight="bold", color='white')
+plt.axhline(y=0, color='white', lw=0.5)
+plt.legend()
 
 # Define custom formatter function
 def yAxisFormatter(y, pos):
@@ -261,10 +198,72 @@ def yAxisFormatter(y, pos):
     else:
         return f"{y/1000000:.1f}M"
 
+# Apply formatter to the y-axis tick labels
+plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
+plt.show()
+
+
+# # Create a figure with two subplots
+# fig, (ax1, ax2) = plt.subplots(1, 1, figsize=(12, 6))
+# fig.set_facecolor('black')
+# chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum() / 10 ** 6)) + "M per 1% CVNA Move"
+
+# # First subplot: Bar chart
+# ax1.set_facecolor('black')
+# colors = ['green' if value >= 0 else 'red' for value in dfAgg['TotalGamma'].to_numpy()]
+# ax1.bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Gamma Exposure", color=colors)
+# ax1.set_xlim([fromStrike, toStrike])
+# ax1.set_title(chartTitle, fontweight="bold", fontsize=14, color='white')
+# ax1.set_xlabel('Strike', fontweight="bold", color='white')
+# ax1.set_ylabel('Gamma Exposure ($ / 1% move)', fontweight="bold", color='white')
+# ax1.axhline(y=0, color='white', lw=0.5)
+# ax1.legend()
+# ax1.grid(True, linestyle='dashed', lw=0.3)
+
+# # Set the color of axes and ticks to white for the first subplot
+# ax1.spines['bottom'].set_color('white')
+# ax1.spines['left'].set_color('white')
+# ax1.spines['top'].set_color('white')
+# ax1.spines['right'].set_color('white')
+# ax1.xaxis.label.set_color('white')
+# ax1.yaxis.label.set_color('white')
+# ax1.tick_params(axis='x', colors='white')
+# ax1.tick_params(axis='y', colors='white')
+
+# # Second subplot: Line plot
+# ax2.set_facecolor('black')
+
+# ax2.plot(strikes, dfAgg['TotalGamma'].to_numpy(), linewidth=1, label="Gamma Exposure", color='green')
+# ax2.fill_between(strikes, dfAgg['TotalGamma'].to_numpy(), color='lightgreen', alpha=0.3)
+# ax2.set_xlim([fromStrike, toStrike])
+# ax2.set_title(chartTitle, fontweight="bold", fontsize=14, color='white')
+# ax2.set_xlabel('Strike', fontweight="bold", color='white')
+# ax2.set_ylabel('Gamma Exposure ($ / 1% move)', fontweight="bold", color='white')
+# ax2.axhline(y=0, color='white', lw=0.5)
+# ax2.legend()
+# ax2.grid(True, linestyle='dashed', lw=0.3)
+
+# # Set the color of axes and ticks to white for the second subplot
+# ax2.spines['bottom'].set_color('white')
+# ax2.spines['left'].set_color('white')
+# ax2.spines['top'].set_color('white')
+# ax2.spines['right'].set_color('white')
+# ax2.xaxis.label.set_color('white')
+# ax2.yaxis.label.set_color('white')
+# ax2.tick_params(axis='x', colors='white')
+# ax2.tick_params(axis='y', colors='white')
+
+# Define custom formatter function
+# def yAxisFormatter(y, pos):
+#     if -1000000 < y < 1000000:
+#         return f"{y/1000:.0f}K"
+#     else:
+#         return f"{y/1000000:.1f}M"
+
 # Apply formatter to the y-axis tick labels for both subplots
-ax1.yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
-ax2.yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
+# ax1.yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
+# ax2.yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
 
 # Adjust the spacing between the subplots
-plt.subplots_adjust(wspace=0.3)
-plt.show()
+# plt.subplots_adjust(wspace=0.3)
+# plt.show()
