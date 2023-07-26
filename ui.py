@@ -16,78 +16,8 @@ import time
 import random
 import os
 import tkinter as tk
-
-# filePath = os.path.expanduser('~/Downloads/cvna_quotedata.csv')
-
-# if os.path.exists(filePath):
-#     os.remove(filePath)
-
-# def delay(s, e):
-#     interval = random.uniform(s, e)
-#     time.sleep(interval)
-
-# def initialize_driver():
-#     useragent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36"
-#     chromeOptions = uc.ChromeOptions()
-#     chromeOptions.add_argument(f'user-agent={useragent}')
-#     chromeOptions.headless = True
-#     chromeOptions.add_argument("--headless")
-
-#     chromeOptions.add_argument("--disable-blink-features=AutomationControlled")
-#     chromeOptions.add_argument("--no-first-run")
-#     chromeOptions.add_argument("--no-service-autorun")
-#     chromeOptions.add_argument("--no-default-browser-check")
-#     chromeOptions.add_argument("--disable-extensions")
-#     chromeOptions.add_argument("--disable-popup-blocking")
-#     chromeOptions.add_argument("--profile-directory=Default")
-#     chromeOptions.add_argument("--ignore-certificate-errors")
-#     chromeOptions.add_argument("--disable-plugins-discovery")
-#     chromeOptions.add_argument("--incognito")
-#     chromeOptions.add_argument("--start-maximized")
-#     chromeOptions.add_argument('--no-sandbox')
-
-#     global driver
-#     driver = uc.Chrome(executable_path=ChromeDriverManager().install(), options=chromeOptions)
-
-
-# initialize_driver()
-
-# # Navigate to the webpage
-# driver.get('https://www.cboe.com/delayed_quotes/cvna/quote_table')
-
-# try:
-#     delay(1, 3)
-#     driver.find_element(By.CSS_SELECTOR, ".button--solid.privacy-alert__agree-button").click()
-# except:
-#     pass
-
-# try:
-#     delay(1, 3)
-#     optionRange = driver.find_element(By.CSS_SELECTOR, '#root > div > div > div.Box-sc-jzm6b1-0.cvqwTQ > div.Box-sc-jzm6b1-0.Tabs___StyledBox-sc-zx70g3-6.jkMlqj > div:nth-child(2) > div.Box-sc-jzm6b1-0.Flex-sc-9zr7dk-0.cXQocl > div:nth-child(3) > div > div.Box-sc-jzm6b1-0.FormField__Field-sc-150d642-0.dTWjar > div > div > div')
-#     optionRange.click()
-# except:
-#     pass
-
-# try:
-#     delay(1, 3)
-#     optionRangeAll = driver.find_element(By.CSS_SELECTOR, '.ReactSelect__menu > div > div:nth-child(1)')
-#     optionRangeAll.click()
-# except:
-#     pass
-
-# try:
-#     delay(1, 3)
-#     viewChainButton = driver.find_element(By.CSS_SELECTOR, '.Button__StyledButton-sc-1tdgwi0-2.gNcAGf')
-#     viewChainButton.click()
-# except:
-#     pass
-
-# try:
-#     delay(1, 3)
-#     downloadButton = driver.find_element(By.CSS_SELECTOR, '.Button__StyledButton-sc-1tdgwi0-2.kvidqt')
-#     downloadButton.click()
-# except:
-#     pass
+from tkinter import ttk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 pd.options.display.float_format = '{:,.4f}'.format
@@ -172,24 +102,6 @@ df['TotalGamma'] = (df.CallGEX + df.PutGEX)
 dfAgg = df.groupby(['StrikePrice'])[['CallGEX', 'PutGEX', 'TotalGamma']].sum()
 strikes = dfAgg.index.values
 
-# Display Gamma Exposure
-fig = plt.figure()
-fig.set_facecolor('black')
-colors = ['green' if value >= 0 else 'red' for value in dfAgg['TotalGamma'].to_numpy()]
-chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum() / 10 ** 6)) + "M per 1% CVNA Move"
-plt.rcParams['ytick.color'] = 'white'
-plt.rcParams['xtick.color'] = 'white'
-plt.rcParams['axes.edgecolor'] = 'white'
-plt.rcParams['axes.edgecolor'] = 'white'
-plt.grid(True, linestyle='dashed', lw=0.3)
-plt.bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Gamma Exposure", color=colors)
-plt.gca().set_facecolor('black')
-plt.xlim([fromStrike, toStrike])
-plt.title(chartTitle, fontweight="bold", fontsize=20, color='white')
-plt.xlabel('Strike', fontweight="bold", color='white')
-plt.ylabel('Spot Gamma Exposure ($ / 1% move)', fontweight="bold", color='white')
-plt.axhline(y=0, color='white', lw=0.5)
-plt.legend()
 
 # Define custom formatter function
 def yAxisFormatter(y, pos):
@@ -198,6 +110,68 @@ def yAxisFormatter(y, pos):
     else:
         return f"{y/1000000:.1f}M"
 
+
+# Create three subplots within one figure
+fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+fig.suptitle("Gamma Exposure Visualization", fontsize=16)
+fig.set_facecolor('black')
+
+# # Display Gamma Exposure
+# colors = ['green' if value >= 0 else 'red' for value in dfAgg['TotalGamma'].to_numpy()]
+# chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum() / 10 ** 6)) + "M per 1% CVNA Move"
+# plt.rcParams['ytick.color'] = 'white'
+# plt.rcParams['xtick.color'] = 'white'
+# plt.rcParams['axes.edgecolor'] = 'white'
+# plt.rcParams['axes.edgecolor'] = 'white'
+# plt.bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Gamma Exposure", color=colors)
+# plt.xlim([fromStrike, toStrike])
+# plt.title(chartTitle, fontweight="bold", fontsize=20, color='white')
+# plt.xlabel('Strike', fontweight="bold", color='white')
+# plt.ylabel('Spot Gamma Exposure ($ / 1% move)', fontweight="bold", color='white')
+# plt.axhline(y=0, color='white', lw=0.5)
+# plt.legend()
+
+
+
+# Call and Put Gamma Display
+axs[1].bar(strikes, dfAgg['CallGEX'].to_numpy(), width=0.2, linewidth=0.1, label="Call Gamma", color='green')
+axs[1].bar(strikes, dfAgg['PutGEX'].to_numpy(), width=0.2, linewidth=0.1, label="Put Gamma", color='red')
+axs[1].set_title("Gamma", color='white')
+axs[1].set_xlabel('Strike', color='white')
+axs[1].set_ylabel('Call and Put Gamma, $', color='white')
+axs[1].set_facecolor('black')
+axs[1].axhline(y=0, color='white', lw=0.5)
+axs[1].grid(True, linestyle='dashed', lw=0.3)
+axs[1].set_xlim([fromStrike, toStrike])
+axs[1].yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
+axs[1].legend()
+axs[1].tick_params(axis='x', colors='white')
+axs[1].tick_params(axis='y', colors='white')
+for spine in axs[1].spines.values():
+    spine.set_edgecolor('white')
+    
+# Call and Put Gamma Display
+colors = ['green' if value >= 0 else 'red' for value in dfAgg['TotalGamma'].to_numpy()]
+chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum() / 10 ** 6)) + "M / 1% CVNA MOVE"
+axs[2].bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Call Gamma", color=colors)
+axs[2].set_title(chartTitle, color='white')
+axs[2].set_xlabel('Strike', color='white')
+axs[2].set_ylabel('Total Gamma Exposure, $', color='white')
+axs[2].set_facecolor('black')
+axs[2].axhline(y=0, color='white', lw=0.5)
+axs[2].grid(True, linestyle='dashed', lw=0.3)
+axs[2].set_xlim([fromStrike, toStrike])
+axs[2].yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
+axs[2].tick_params(axis='x', colors='white')
+axs[2].tick_params(axis='y', colors='white')
+for spine in axs[2].spines.values():
+    spine.set_edgecolor('white')    
+
+
+
+
+
 # Apply formatter to the y-axis tick labels
-plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
+# plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
+plt.tight_layout()
 plt.show()
