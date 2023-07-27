@@ -22,32 +22,47 @@ from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
 pd.options.display.float_format = '{:,.4f}'.format
 
+def on_option_change(value):
+    # Function to handle the OptionMenu selection change
+    pass
 
-#Create the main Tkinter application
-root = Tk()
-root.title("Vanna/Gamma Exposure Visualization")
-root.geometry("1400x700")
-root.configure(bg="black")
-
-# Create a frame to hold the plots
-plotFrame = ttk.Frame(root)
+def on_button_click():
+    # Function to handle the "View" button click
+    calculateAndDisplay()
 
 def calculateAndDisplay():
-    selectedDate = datetime.strptime(selectedDateVar.get(), '%Y-%m-%d')
-    
-    # Filter data based on selected expiration date
-    filteredDf = df[df['ExpirationDate'] == selectedDate]
-    dfAgg = filteredDf.groupby(['StrikePrice'])[['Vanna', 'CallGEX', 'PutGEX', 'TotalGamma']].sum()
-    strikes = dfAgg.index.values
     
     # Create three subplots within one figure
     fig, axs = plt.subplots(1, 3, figsize=(15, 5))
     fig.suptitle("Vanna/Gamma Exposure Visualization", fontsize=16)
     fig.set_facecolor('black')
     
+    root = Tk()
+    root.title("Gamma Exposure Visualization")
+   
+   # Add the select box for expiration date
+    selectedDateVar = StringVar(root)
+    expiration_dates = sorted(df['ExpirationDate'].dt.strftime('%Y-%m-%d').unique())
+    print(expiration_dates)
+    selectedDateVar.set(expiration_dates[0])
+    select_date = OptionMenu(root, selectedDateVar, *expiration_dates, command=on_option_change)
+    select_date.config(bg='white', font=('Arial', 10))
+
+    # Add the "View" button
+    view_button = Button(root, text='View', bg='white', activebackground='yellow', command=on_button_click)
+    view_button.pack()
+    
+    selectedDate = datetime.strptime(selectedDateVar.get(), '%Y-%m-%d')
+    
     # Add the selected expiration date as a text annotation
-    expirationDateText = selectedDate.strftime('%Y-%m-%d')
+    expirationDateText = selectedDate.strftime('%Y-%m-%d') 
     fig.text(0.5, 0.98, f"Expiration Date: {expirationDateText}", ha='center', va='top', color='yellow', fontsize=16)
+    
+    # Filter data based on selected expiration date
+    filteredDf = df[df['ExpirationDate'] == selectedDate]
+    dfAgg = filteredDf.groupby(['StrikePrice'])[['Vanna', 'CallGEX', 'PutGEX', 'TotalGamma']].sum()
+    strikes = dfAgg.index.values
+    
 
     # Call and Put Gamma Display
     xnew = np.linspace(strikes.min(), strikes.max(), 500)  # Smooth x values for interpolation
@@ -102,25 +117,27 @@ def calculateAndDisplay():
     axs[2].tick_params(axis='y', colors='white')
     for spine in axs[2].spines.values():
         spine.set_edgecolor('white')    
-
-          
+   
     plt.tight_layout()
     # plt.show()
-    
-    # Clear the plot_frame before displaying the new plots
-    for widget in plotFrame.winfo_children():
-        widget.destroy()
 
-    # Embed the plots in the plot_frame using FigureCanvasTkAgg
-    canvas = FigureCanvasTkAgg(fig, master=plotFrame)
+    # Add the plot to the tkinter window
+    canvas = FigureCanvasTkAgg(fig, master=root)
     canvas.draw()
-    canvas.get_tk_widget().pack()
-    
-    # Add the NavigationToolbar2Tk to the plot_frame
-    toolbar = NavigationToolbar2Tk(canvas, plotFrame)
+
+    # Add the NavigationToolbar to the tkinter window
+    toolbar = NavigationToolbar2Tk(canvas, root)
     toolbar.update()
-    canvas.get_tk_widget().pack(side="bottom", fill="both", expand=True)
-      
+
+    # Position the plot and toolbar in the tkinter window
+    canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
+    toolbar.pack(side='top', fill='both', padx=5, pady=5)
+
+    # Start the tkinter main loop
+    root.mainloop()
+    
+    
+     
     # Calculate max and min values for each plot
     maxVanna = dfAgg['Vanna'].max()
     minVanna = dfAgg['Vanna'].min()
@@ -137,6 +154,7 @@ def calculateAndDisplay():
     axs[2].text(0.98, 0.95, f"Max: {maxGammaExposure:.2f}", ha='right', va='top', transform=axs[2].transAxes, color='green')
     axs[2].text(0.98, 0.90, f"Min: {minGammaExposure:.2f}", ha='right', va='top', transform=axs[2].transAxes, color='red')
 
+   
 
 
 # Use forward slashes in the file path
@@ -206,15 +224,6 @@ def yAxisFormatter(y, pos):
     else:
         return f"{y/1000000:.1f}M"
 
-# UI components
-selectedDateVar = StringVar(root)
-selectedDateVar.set(df['ExpirationDate'].min().strftime('%Y-%m-%d'))
-dateSelectBox = OptionMenu(root, selectedDateVar, * df['ExpirationDate'].dt.strftime('%Y-%m-%d').unique())
-
-viewButton = Button(root, text="View", command=calculateAndDisplay, bg='darkgreen', fg='white', font=('Helvetica', 14))
-
-dateSelectBox.pack(padx=10, pady=5)
-viewButton.pack( padx=10, pady=5)
-plotFrame.pack(side='bottom', pady=10) 
-
-root.mainloop()
+# Ensure this block of code is executed only when this script is run
+if __name__ == "__main__":
+    calculateAndDisplay()
