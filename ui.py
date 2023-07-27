@@ -63,7 +63,6 @@ toStrike = 1.2 * spotPrice
 dateLine = optionsFileData[2]
 todayDate = dateLine.split('Date: ')[1].split(',')
 monthDay = todayDate[0].split(' ')
-
 # Handling of US/EU date formats
 if len(monthDay) == 2:
     year = int(todayDate[1].split()[0])
@@ -99,10 +98,11 @@ df['PutOpenInt'] = df['PutOpenInt'].astype(float)
 df['CallGEX'] = df['CallGamma'] * df['CallOpenInt'] * 100 * spotPrice * spotPrice * 0.01
 df['PutGEX'] = df['PutGamma'] * df['PutOpenInt'] * 100 * spotPrice * spotPrice * 0.01 * -1
 df['TotalGamma'] = (df.CallGEX + df.PutGEX) 
-dfAgg = df.groupby(['StrikePrice'])[['CallGEX', 'PutGEX', 'TotalGamma']].sum()
+df['Days'] = (df['ExpirationDate'] - todayDate).dt.days
+df['Vanna'] = df['TotalGamma'] * df['Days']
+dfAgg = df.groupby(['StrikePrice'])[['Vanna', 'CallGEX', 'PutGEX', 'TotalGamma']].sum()
 strikes = dfAgg.index.values
-
-
+print(df['Days'])
 # Define custom formatter function
 def yAxisFormatter(y, pos):
     if -1000000 < y < 1000000:
@@ -113,25 +113,28 @@ def yAxisFormatter(y, pos):
 
 # Create three subplots within one figure
 fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-fig.suptitle("Gamma Exposure Visualization", fontsize=16)
+fig.suptitle("Vanna/Gamma Exposure Visualization", fontsize=16)
 fig.set_facecolor('black')
 
-# # Display Gamma Exposure
-# colors = ['green' if value >= 0 else 'red' for value in dfAgg['TotalGamma'].to_numpy()]
-# chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum() / 10 ** 6)) + "M per 1% CVNA Move"
-# plt.rcParams['ytick.color'] = 'white'
-# plt.rcParams['xtick.color'] = 'white'
-# plt.rcParams['axes.edgecolor'] = 'white'
-# plt.rcParams['axes.edgecolor'] = 'white'
-# plt.bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Gamma Exposure", color=colors)
-# plt.xlim([fromStrike, toStrike])
-# plt.title(chartTitle, fontweight="bold", fontsize=20, color='white')
-# plt.xlabel('Strike', fontweight="bold", color='white')
-# plt.ylabel('Spot Gamma Exposure ($ / 1% move)', fontweight="bold", color='white')
-# plt.axhline(y=0, color='white', lw=0.5)
-# plt.legend()
-
-
+# Call and Put Gamma Display
+xnew = np.linspace(strikes.min(), strikes.max(), 500)  # Smooth x values for interpolation
+spl = make_interp_spline(strikes, dfAgg['Vanna'].to_numpy(), k=5)
+ynew = spl(xnew)
+axs[0].plot(xnew, ynew, linewidth=1.5, label="Total Vanna", color='green')    #Plot Chart
+# axs[2].bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Call Gamma", color=colors)  #Bar Chart
+# axs[2].plot(strikes, dfAgg['TotalGamma'].to_numpy(), linewidth=1, label="Call Gamma", color='green')    #Plot Chart
+axs[0].set_title("Vanna", color='white')
+axs[0].set_xlabel('Strike', color='white')
+axs[0].set_ylabel('Total Vanna, $', color='white')
+axs[0].set_facecolor('black')
+axs[0].axhline(y=0, color='white', lw=0.5)
+axs[0].grid(True, linestyle='dashed', lw=0.3)
+axs[0].set_xlim([fromStrike, toStrike])
+axs[0].yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
+axs[0].tick_params(axis='x', colors='white')
+axs[0].tick_params(axis='y', colors='white')
+for spine in axs[0].spines.values():
+    spine.set_edgecolor('white')    
 
 # Call and Put Gamma Display
 axs[1].bar(strikes, dfAgg['CallGEX'].to_numpy(), width=0.2, linewidth=0.1, label="Call Gamma", color='green')
@@ -153,7 +156,12 @@ for spine in axs[1].spines.values():
 # Call and Put Gamma Display
 colors = ['green' if value >= 0 else 'red' for value in dfAgg['TotalGamma'].to_numpy()]
 chartTitle = "Total Gamma: $" + str("{:.2f}".format(df['TotalGamma'].sum() / 10 ** 6)) + "M / 1% CVNA MOVE"
-axs[2].bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Call Gamma", color=colors)
+xnew = np.linspace(strikes.min(), strikes.max(), 500)  # Smooth x values for interpolation
+spl = make_interp_spline(strikes, dfAgg['TotalGamma'].to_numpy(), k=5)
+ynew = spl(xnew)
+axs[2].plot(xnew, ynew, linewidth=1.5, label="Call Gamma", color='green')    #Plot Chart
+# axs[2].bar(strikes, dfAgg['TotalGamma'].to_numpy(), width=0.2, linewidth=0.1, label="Call Gamma", color=colors)  #Bar Chart
+# axs[2].plot(strikes, dfAgg['TotalGamma'].to_numpy(), linewidth=1, label="Call Gamma", color='green')    #Plot Chart
 axs[2].set_title(chartTitle, color='white')
 axs[2].set_xlabel('Strike', color='white')
 axs[2].set_ylabel('Total Gamma Exposure, $', color='white')
