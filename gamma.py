@@ -183,6 +183,7 @@ def calculateAndDisplay():
     axs[2].set_ylabel('Total Gamma Exposure, $', color='white')
     axs[2].set_facecolor('black')
     axs[2].axhline(y=0, color='white', lw=0.5)
+    
     axs[2].grid(True, linestyle='dashed', lw=0.3)
     axs[2].set_xlim([fromStrike, toStrike])
     axs[2].yaxis.set_major_formatter(ticker.FuncFormatter(yAxisFormatter))
